@@ -31,8 +31,8 @@ namespace StateMachine
             return new StatusCellrom()
             {
                 name = name,
-                pass = pass,
-                to = to
+                Pass = pass,
+                To = to
             };
         }
 
@@ -44,7 +44,20 @@ namespace StateMachine
     public struct StatusCellrom
     {
         public string name;
-        public Queue<FunctionInfo> pass;
-        public Queue<SkipInfo> to;
+        private Queue<FunctionInfo> pass;
+        private Queue<SkipInfo> to;
+        public Queue<FunctionInfo> Pass { set { pass = value; } }
+        public Queue<SkipInfo> To { set { to = value; } }
+
+        public FunctionInfo GetFunction() 
+        { 
+            if(pass.Count > 0) { return pass.Dequeue(); }
+            return null;
+        }
+        public SkipInfo GetSkip() 
+        {
+            if (to.Count > 0) { return to.Dequeue(); }
+            return null;
+        }
     }
 }

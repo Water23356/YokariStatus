@@ -50,7 +50,8 @@ namespace StateMachine
         }
         public FunctionInfo GetFunction()
         {
-            return functions.Peek();
+            if (functions.Count > 0) { return functions.Dequeue(); }
+            return null;
         }
     }
 
