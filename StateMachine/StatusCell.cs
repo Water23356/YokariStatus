@@ -19,7 +19,7 @@ namespace StateMachine
         /// <summary>
         /// 状态步骤
         /// </summary>
-        private List<StepInfo> steps;
+        private List<StepInfo> steps = new List<StepInfo>();
         /// <summary>
         /// 当前步骤索引
         /// </summary>
@@ -32,6 +32,7 @@ namespace StateMachine
         #endregion
 
         #region 响应函数
+        public void AddStep(StepInfo step) { steps.Add(step); }
         /// <summary>
         /// 获取该状态指定步骤的信息
         /// </summary>

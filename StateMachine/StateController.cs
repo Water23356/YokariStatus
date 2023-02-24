@@ -97,12 +97,15 @@ namespace StateMachine
                             if (skip.condition == backvalue)//满足出口条件
                             {
                                 //逐步实现伴随函数
-                                int k = 0;
-                                while(k<skip.functions.Count)
+                                if(skip.functions != null)
                                 {
-                                    FunctionInfo functionInfo= skip.functions[k];
-                                    effector.Effect(functionInfo.name, functionInfo.parameters);
-                                    ++k;
+                                    int k = 0;
+                                    while (k < skip.functions.Count)
+                                    {
+                                        FunctionInfo functionInfo = skip.functions[k];
+                                        effector.Effect(functionInfo.name, functionInfo.parameters);
+                                        ++k;
+                                    }
                                 }
                                 //修改出口信息
                                 nextName = skip.name;

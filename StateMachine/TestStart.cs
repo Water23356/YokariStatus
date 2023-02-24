@@ -11,19 +11,8 @@ namespace StateMachine
     {
         public static void Main(string[] args)
         {
-            Queue<string> myQ = new Queue<string>();
-            myQ.Enqueue("Hello");
-            myQ.Enqueue("World");
-            myQ.Enqueue("233");
 
-            Console.WriteLine(myQ.Count);
-            Console.WriteLine(myQ.Dequeue());
-            Console.WriteLine(myQ.Dequeue());
-            Console.WriteLine(myQ.Dequeue());
-            Console.WriteLine(myQ.Count);
         }
-        
-
     }
 
 
