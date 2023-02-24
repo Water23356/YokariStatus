@@ -9,7 +9,7 @@ namespace StateMachine
     /// <summary>
     /// 跳转信息
     /// </summary>
-    public class SkipInfo
+    public struct SkipInfo
     {
         #region 属性
         /// <summary>
@@ -19,40 +19,16 @@ namespace StateMachine
         /// <summary>
         /// 条件
         /// </summary>
-        public int condition;
+        public string condition;
+        /// <summary>
+        /// 起始步骤索引（默认为0）
+        /// </summary>
+        public int index;
         /// <summary>
         /// 过渡函数
         /// </summary>
-        public Queue<FunctionInfo> functions;
+        public List<FunctionInfo> functions;
         #endregion
-
-        public SkipInforom Copy()
-        {
-            return new SkipInforom()
-            {
-                name = name,
-                condition = condition,
-                Functions = functions
-            };
-        }
-    }
-
-
-    public struct SkipInforom
-    {
-        public string name;
-        public int condition;
-        private Queue<FunctionInfo> functions;
-
-        public Queue<FunctionInfo> Functions
-        {
-            set { functions = value; }
-        }
-        public FunctionInfo GetFunction()
-        {
-            if (functions.Count > 0) { return functions.Dequeue(); }
-            return null;
-        }
     }
 
 }

@@ -16,6 +16,7 @@ namespace StateMachine
         /// </summary>
         /// <param name="name">函数标记符</param>
         /// <param name="parameters">函数参数</param>
-        public void Effect(string name,Dictionary<string,object> parameters);
+        /// <return>返回一个字符串，用于判断是否跳转状态</return>
+        public string Effect(string name,Dictionary<string,object> parameters);
     }
 }

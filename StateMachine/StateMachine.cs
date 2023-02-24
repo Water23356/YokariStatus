@@ -15,7 +15,7 @@ namespace StateMachine
         /// <summary>
         /// 系统中的单元
         /// </summary>
-        private Dictionary<string, StatusCell> cells;
+        private Dictionary<string, StatusCell> cells = new Dictionary<string, StatusCell>();
 
         #endregion
 
@@ -33,6 +33,18 @@ namespace StateMachine
             }
             return false;
         }
+        /// <summary>
+        /// 获取指定状态信息
+        /// </summary>
+        /// <param name="name">状态名称</param>
+        /// <returns>若不存在则返回null</returns>
+        public StatusCell Find(string name,int index=0)
+        {
+            if (isExist(name)) { return cells[name].Copy(index); }
+            if (isExist("End")) { return cells["End"].Copy(index); }
+            return new StatusCell("End");
+        }
+
 
         #endregion
 

@@ -7,19 +7,19 @@ using System.Threading.Tasks;
 namespace StateMachine
 {
     /// <summary>
-    /// 函数信息
+    /// 步骤信息
     /// </summary>
-    public struct FunctionInfo
+    public struct StepInfo
     {
         #region 属性
         /// <summary>
-        /// 函数名称
+        /// 步骤函数
         /// </summary>
-        public string name;
+        public FunctionInfo function;
         /// <summary>
-        /// 参数信息
+        /// 跳转状态
         /// </summary>
-        public Dictionary<string, object> parameters;
+        public List<SkipInfo> skips;
         #endregion
     }
 }
