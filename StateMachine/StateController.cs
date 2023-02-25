@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace StateMachine
 {
@@ -34,6 +35,16 @@ namespace StateMachine
         public bool active = false;
         #endregion
 
+        #region 构造函数
+        public StateController() { }
+        public StateController(StateMachine stateMachine, IEffector effector)
+        {
+            this.effector = effector;
+            this.stateMachine = stateMachine;
+        }
+
+        #endregion
+
         #region 内部函数
         private void Log(string txt)
         {
@@ -55,7 +66,7 @@ namespace StateMachine
 
         private void Go()
         {
-            while(active)//不用递归，防止深层递归导致爆栈
+            while (active)//不用递归，防止深层递归导致爆栈
             {
                 active = Run();
             }
@@ -69,56 +80,57 @@ namespace StateMachine
         {
             string nextName = "End";//下一个状态名称
             int nextIndex = 0;//下一个状态的步骤索引
+            if (statusInfo.name == "End")//End状态
+            {
+                return false;//End状态直接结束状态机
+            }
             if (statusInfo != null)
             {
                 StepInfo next = statusInfo.Next();
-                if (next != null)
+                bool goStep = true;
+                while (next != null && goStep)
                 {
-                    StepInfo step = (StepInfo)next;
                     #region 函数部分
-                    FunctionInfo function = step.function;//函数信息
+                    FunctionInfo function = next.function;//函数信息
                     string backvalue = "";//函数返回值
                     if (function.name != "null")//为非空函数
                     {
-                        backvalue = effector.Effect(function.name, function.parameters);
+                        backvalue = effector.Effect(function.name, function.parameters) + "";
                     }
                     #endregion
                     #region 出口部分
-                    if (statusInfo.name == "End")//End状态
+                    int i = 0;
+                    while (i < next.skips.Count)
                     {
-                        return false;//End状态直接结束状态机
-                    }
-                    else//非End状态则处理出口状态信息
-                    {
-                        int i = 0;
-                        while (i < step.skips.Count)
+                        SkipInfo skip = next.skips[i];//获取出口
+                        if (backvalue == "" || skip.condition == backvalue)//满足出口条件
                         {
-                            SkipInfo skip = step.skips[i];//获取出口
-                            if (skip.condition == backvalue)//满足出口条件
+                            //逐步实现伴随函数
+                            if (skip.functions != null)
                             {
-                                //逐步实现伴随函数
-                                if(skip.functions != null)
+                                int k = 0;
+                                while (k < skip.functions.Count)
                                 {
-                                    int k = 0;
-                                    while (k < skip.functions.Count)
-                                    {
-                                        FunctionInfo functionInfo = skip.functions[k];
-                                        effector.Effect(functionInfo.name, functionInfo.parameters);
-                                        ++k;
-                                    }
+                                    FunctionInfo functionInfo = skip.functions[k];
+                                    effector.Effect(functionInfo.name, functionInfo.parameters);
+                                    ++k;
                                 }
-                                //修改出口信息
-                                nextName = skip.name;
-                                nextIndex = skip.index;
-                                break;//跳出对出口的循环
                             }
-                            ++i;
+                            //修改出口信息
+                            nextName = skip.name;
+                            nextIndex = skip.index;
+                            //不再进行以下步骤
+                            goStep = false;
+                            break;//跳出对出口的循环
                         }
+                        ++i;
                     }
+
+                    #endregion
+                    next = statusInfo.Next();
                 }
             }
-            #endregion
-            statusInfo= stateMachine.Find(nextName,nextIndex);
+            statusInfo = stateMachine.Find(nextName, nextIndex);
             return true;
         }
     }

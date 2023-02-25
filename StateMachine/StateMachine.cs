@@ -209,6 +209,7 @@ namespace StateMachine
                             case ' '://空白字符跳过
                             case '\t':
                             case '\n':
+                            case ';':
                             case '\r':
                                 break;
                             case '"'://转为引用模式
@@ -251,6 +252,7 @@ namespace StateMachine
                                         cell_c = new StatusCell(cache);//创建单元对象
                                         cache = "";//清空缓存
                                         cell = formCell.Cnameok;
+                                        inquote = false;
                                         break;
                                     case '\\':
                                         inchange = true;
@@ -311,6 +313,7 @@ namespace StateMachine
                             case ' ':
                             case '\t':
                             case '\r':
+                            case ';':
                             case '\n': break;
                             case '}'://单元完整编辑结构（将单元封装进库内）
                                 sm.Add(cell_c);
@@ -344,6 +347,7 @@ namespace StateMachine
                         case ' '://空白字符跳过
                         case '\t':
                         case '\n':
+                        case ';':
                         case '\r':
                             break;
                         case '"'://转为引用模式
@@ -387,6 +391,7 @@ namespace StateMachine
                                     function_c = new FunctionInfo() { name = cache};//生成步骤中的函数缓存
                                     cache = "";//清空缓存
                                     step = formStep.Snameok;
+                                    inquote = false;
                                     break;
                                 case '\\':
                                     inchange = true;
@@ -491,6 +496,7 @@ namespace StateMachine
                         case ' ':
                         case '\t':
                         case '\r':
+                        case ';':
                         case '\n': break;
                         case '}'://步骤的完整结构（步骤解析完毕，将步骤封装进单元内）
                             cell_c.AddStep(step_c);
@@ -581,6 +587,7 @@ namespace StateMachine
                                 case '"'://结束命名
                                     //暂时不清除缓存，因为匹配键值对时要用
                                     param= formParam.Knameok;
+                                    inquote = false;
                                     break;
                                 case '\\':
                                     inchange = true;
@@ -670,6 +677,7 @@ namespace StateMachine
                                     cache = "";//清空缓存
                                     cache2 = "";//清空缓存
                                     param = formParam.Vnameok;
+                                    inquote = false;
                                     break;
                                 case '\\':
                                     inchange = true;
@@ -773,6 +781,7 @@ namespace StateMachine
                         case ' '://空白字符跳过
                         case '\t':
                         case '\n':
+                        case ';':
                         case '\r':
                             break;
                         case '"'://转为引用模式
@@ -815,6 +824,7 @@ namespace StateMachine
                                     skip_c = new SkipInfo() { name = cache };//生成出口对象
                                     cache = "";//清空命名缓存
                                     to = formTo.Tnameok;
+                                    inquote = false;
                                     break;
                                 case '\\':
                                     inchange = true;
@@ -909,6 +919,7 @@ namespace StateMachine
                                     skip_c.condition = cache;//设置条件
                                     cache = "";//清空命名缓存
                                     to = formTo.Inameok;
+                                    inquote = false;
                                     break;
                                 case '\\':
                                     inchange = true;
@@ -1127,6 +1138,7 @@ namespace StateMachine
                                     function_c = new FunctionInfo() { name = cache };//生成函数信息
                                     cache = "";//清空命名缓存
                                     func = formFunc.Fnameok;
+                                    inquote = false;
                                     break;
                                 case '\\':
                                     inchange = true;
