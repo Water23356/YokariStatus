@@ -32,12 +32,31 @@ namespace StateMachine
 
         public void PrintInfo(string tabto)
         {
-            Console.WriteLine($"【出口】:{name}:{condition}"+"{");
+            Console.WriteLine(tabto + $"【出口】:{name}:{condition}"+"{");
             foreach(FunctionInfo f in functions)
             {
                 f.PrintInfo(tabto+"\t");
             }
             Console.WriteLine(tabto+"}");
+        }
+        /// <summary>
+        /// 清除空元素
+        /// </summary>
+        public void ClearNull()
+        {
+            int i = 0;
+            while(i<functions.Count)
+            {
+                if (functions[i] == null)
+                {
+                    functions.RemoveAt(i);
+                }
+                else
+                {
+                    functions[i].ClearNull();
+                    ++i;
+                }
+            }
         }
     }
 

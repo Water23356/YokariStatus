@@ -27,9 +27,16 @@ namespace StateMachine
             Console.WriteLine(tabto+$"【函数】:{name}"+"{");
             foreach(string k in parameters.Keys)
             {
-                Console.WriteLine(tabto+$"\t{parameters.Keys} : {parameters.Values },");
+                Console.WriteLine(tabto+$"\t{k} : {parameters[k] },");
             }
             Console.WriteLine(tabto+"}");
+        }
+        /// <summary>
+        /// 清除null对象
+        /// </summary>
+        public void ClearNull()
+        {
+            if (parameters == null) { parameters = new Dictionary<string, object>(); }
         }
     }
 }

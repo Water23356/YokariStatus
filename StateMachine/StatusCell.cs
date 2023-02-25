@@ -79,6 +79,25 @@ namespace StateMachine
             }
             Console.WriteLine("}");
         }
+        /// <summary>
+        /// 清除空元素
+        /// </summary>
+        public void ClearNull()
+        {
+            int i = 0;
+            while(i<steps.Count)
+            {
+                if (steps[i] == null)
+                {
+                    steps.RemoveAt(i);
+                }
+                else
+                {
+                    steps[i].ClearNull();
+                    ++i;
+                }
+            }
+        }
         #endregion
     }
 }

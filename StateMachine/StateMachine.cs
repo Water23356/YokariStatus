@@ -71,6 +71,16 @@ namespace StateMachine
                 c.PrintInfo();
             }
         }
+        /// <summary>
+        /// 清除null元素/属性
+        /// </summary>
+        public void ClearNull()
+        {
+            foreach (StatusCell c in cells.Values)
+            {
+                c.ClearNull();
+            }
+        }
         #endregion
 
 
@@ -172,6 +182,7 @@ namespace StateMachine
                     sm.Clear();
                     return false;
                 }
+                length = reader.Read(buffer);
             }
             //所有文本解析完毕后
             if(cell!= formCell.waitCname)//存在编辑器状态则说明解析异常
@@ -180,6 +191,7 @@ namespace StateMachine
                 sm.Clear();
                 return false;
             }
+            sm.ClearNull();//清理为null的对象
             return true;
         }
 
@@ -303,6 +315,7 @@ namespace StateMachine
                             case '}'://单元完整编辑结构（将单元封装进库内）
                                 sm.Add(cell_c);
                                 cell_c = null;
+                                cell = formCell.waitCname;
                                 break;
                             default://说明还有未添加的步骤
                                 cell = formCell.step;
@@ -438,7 +451,7 @@ namespace StateMachine
                         case '\r':
                         case '\n':break;
                         case '{'://出口开始标记
-                            step = formStep.to;
+                            step = formStep.took;
                             break;
                         case ';'://出口结束标记(步骤封装完毕)
                             cell_c.AddStep(step_c);

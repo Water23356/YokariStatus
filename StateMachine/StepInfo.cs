@@ -32,5 +32,25 @@ namespace StateMachine
             }
             Console.WriteLine(tabto+"}");
         }
+        /// <summary>
+        /// 清除空元素
+        /// </summary>
+        public void ClearNull()
+        {
+            function.ClearNull();
+            int i = 0;
+            while(i<skips.Count)
+            {
+                if (skips[i] == null)
+                {
+                    skips.RemoveAt(i);
+                }
+                else
+                {
+                    skips[i].ClearNull();
+                    ++i;
+                }
+            }
+        }
     }
 }
