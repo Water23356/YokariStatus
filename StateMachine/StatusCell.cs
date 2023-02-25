@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -63,6 +64,20 @@ namespace StateMachine
                 steps = steps,
                 Index = index
             };
+        }
+        /// <summary>
+        /// 打印状态信息
+        /// </summary>
+        public void PrintInfo()
+        {
+            Console.WriteLine($"【状态】:{name}" +"{");
+            int i = 0;
+            while(i<steps.Count)
+            {
+                steps[i].PrintInfo("\t");
+                ++i;
+            }
+            Console.WriteLine("}");
         }
         #endregion
     }

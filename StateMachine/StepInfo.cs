@@ -19,7 +19,18 @@ namespace StateMachine
         /// <summary>
         /// 跳转状态
         /// </summary>
-        public List<SkipInfo> skips;
+        public List<SkipInfo> skips = new List<SkipInfo>();
         #endregion
+
+        public void PrintInfo(string tabto)
+        {
+            Console.WriteLine(tabto+"【步骤】{");
+            function.PrintInfo(tabto+"\t");
+            foreach(SkipInfo s in skips)
+            {
+                s.PrintInfo(tabto + "\t");
+            }
+            Console.WriteLine(tabto+"}");
+        }
     }
 }

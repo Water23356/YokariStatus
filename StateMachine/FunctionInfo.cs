@@ -21,5 +21,15 @@ namespace StateMachine
         /// </summary>
         public Dictionary<string, object> parameters;
         #endregion
+
+        public void PrintInfo(string tabto)
+        {
+            Console.WriteLine(tabto+$"【函数】:{name}"+"{");
+            foreach(string k in parameters.Keys)
+            {
+                Console.WriteLine(tabto+$"\t{parameters.Keys} : {parameters.Values },");
+            }
+            Console.WriteLine(tabto+"}");
+        }
     }
 }

@@ -27,8 +27,18 @@ namespace StateMachine
         /// <summary>
         /// 过渡函数
         /// </summary>
-        public List<FunctionInfo> functions;
+        public List<FunctionInfo> functions = new List<FunctionInfo>();
         #endregion
+
+        public void PrintInfo(string tabto)
+        {
+            Console.WriteLine($"【出口】:{name}:{condition}"+"{");
+            foreach(FunctionInfo f in functions)
+            {
+                f.PrintInfo(tabto+"\t");
+            }
+            Console.WriteLine(tabto+"}");
+        }
     }
 
 }
