@@ -1150,6 +1150,8 @@ namespace StateMachine
                                 function_c = new FunctionInfo() { name = cache };//生成函数信息
                                 cache = "";//清空命名缓存
                                 func = formFunc.param;
+                                param = formParam.waitKname;
+                                param_c = new Dictionary<string, object>();//生成参数缓存
                                 break;
                             default:
                                 cache += c;
@@ -1166,6 +1168,8 @@ namespace StateMachine
                         case '\n': break;
                         case '('://参数封装起始符
                             func = formFunc.param;
+                            param = formParam.waitKname;
+                            param_c = new Dictionary<string, object>();//生成参数缓存
                             break;
                         default:
                             Console.WriteLine("函数名称解释错误");
