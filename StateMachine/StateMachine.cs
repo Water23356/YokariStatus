@@ -61,6 +61,16 @@ namespace StateMachine
         {
             cells.Clear();
         }
+        /// <summary>
+        /// 打印全部状态信息
+        /// </summary>
+        public void LogAll()
+        {
+            foreach(StatusCell c in cells.Values)
+            {
+                c.PrintInfo();
+            }
+        }
         #endregion
 
 
@@ -72,9 +82,9 @@ namespace StateMachine
     public class ScriptParser
     {
         private enum formCell { waitCname,Cname,Cnameok,step,stepok}
-        private enum formStep { waitSname,Sname,Snameok,param,paramok,to,took,go}
+        private enum formStep { waitSname,Sname,Snameok,param,paramok,waitTo,to,took,go}
         private enum formParam { waitKname,Kname,Knameok,waitVname,Vname,Vnameok}
-        private enum formTo { waitTname,Tname,Tnameok,waitIname,Iname,Inameok,function,functionok}
+        private enum formTo { waitTname,Tname,Tnameok,waitIname,Iname,Inameok,waitIndex,Index,Indexok, waitFunction,function, functionok}
         private enum formFunc { waitFname,Fname,Fnameok,param,paramok}
 
 
@@ -108,6 +118,7 @@ namespace StateMachine
         /// <returns></returns>
         private object Changevalue(string txt)
         {
+            object value = null;
             if (Regex.IsMatch(cache2, @"^(0|-?[1-9][0-9]*)$"))//判断是否为整形
             {
                 value = Convert.ToInt32(cache2);
@@ -116,10 +127,23 @@ namespace StateMachine
             {
                 value = Convert.ToDouble(cache2);
             }
-            else if ()//判断是否为布尔类型
+            else
             {
-
+                if(txt.ToLower() == "true")
+                {
+                    value = true;
+                }
+                else if (txt.ToLower() == "false")
+                {
+                    value = false;
+                }
+                else
+                {
+                    value = txt;
+                }
             }
+            return value;
+
         }
 
         /**
@@ -235,7 +259,7 @@ namespace StateMachine
                                 case '{'://命名结束
                                     cell_c = new StatusCell(cache);
                                     cache = "";
-                                    cell = formCell.step;
+                                    cell = formCell.stepok;
                                     step = formStep.waitSname;
                                     break;
                                 default:
@@ -251,7 +275,7 @@ namespace StateMachine
                             case '\t':
                             case '\n': break;
                             case '{':
-                                cell = formCell.step;
+                                cell = formCell.stepok;
                                 step = formStep.waitSname;
                                 break;
                             default:
@@ -278,6 +302,7 @@ namespace StateMachine
                                 break;
                             default://说明还有未添加的步骤
                                 cell = formCell.step;
+                                step = formStep.waitSname;
                                 if (!Parse_Step(c))//解析出错则抛出错误信息并终止（生成步骤信息，完成后将步骤信息封装进单元内）
                                 {
                                     Console.WriteLine("步骤解析异常");
@@ -416,6 +441,21 @@ namespace StateMachine
                             break;
                     }
                     break;
+                case formStep.waitTo://等待出口
+                    switch(c)
+                    {
+                        case ' ':
+                        case '\t':
+                        case '\n':break;
+                        case '{'://开启出口封装
+                            step = formStep.took;
+                            break;
+                        case ';'://步骤封装完毕
+                            cell_c.AddStep(step_c);
+                            cell = formCell.stepok;
+                            break;
+                    }
+                    break;
                 case formStep.to://出口
                     if(!Parse_To(c))//解析出错则抛出错误信息并终止(生成出口信息，完成后并将出口信息封装进步骤内)
                     {
@@ -434,6 +474,8 @@ namespace StateMachine
                             cell = formCell.stepok;
                             break;
                         default://说明还有出口未封装
+                            to = formTo.waitTname;
+                            step = formStep.to;
                             if (!Parse_To(c))//解析出错则抛出错误信息并终止(生成出口信息，完成后并将出口信息封装进步骤内)
                             {
                                 Console.WriteLine("出口解析异常");
@@ -456,6 +498,25 @@ namespace StateMachine
                         case ' '://空白字符跳过
                         case '\t':
                         case '\n':
+                            break;
+                        case ')':
+                            #region 跳转状态
+                            //判断当前处于哪个状态
+                            if (step == formStep.param)//处于步骤头参数部分
+                            {
+                                //此时步骤的参数部分封装完毕
+                                step = formStep.paramok;
+                                function_c.parameters = param_c;
+                                param_c = null;//清空缓存
+                            }
+                            else if (step == formStep.to)//处于步骤出口函数参数部分
+                            {
+                                //此时函数参数封装完毕
+                                func = formFunc.paramok;
+                                function_c.parameters = param_c;
+                                param_c = null;//清空缓存
+                            }
+                            #endregion
                             break;
                         case '"'://转为引用模式
                             inquote = true;
@@ -581,7 +642,7 @@ namespace StateMachine
                             switch (c)
                             {
                                 case '"'://结束命名
-                                    param_c.Add(cache, cache2);//生成键值对
+                                    param_c.Add(cache, Changevalue(cache2));//生成键值对
                                     cache = "";//清空缓存
                                     cache2 = "";//清空缓存
                                     param = formParam.Vnameok;
@@ -604,15 +665,13 @@ namespace StateMachine
                             case '\n':
                                 break;
                             case ','://命名结束并且继续
-                                param_c.Add(cache, cache2);//生成键值对
+                                param_c.Add(cache, Changevalue(cache2));//生成键值对
                                 cache = "";//清空缓存
                                 cache2 = "";//清空缓存
                                 param = formParam.waitKname;
                                 break;
                             case ')'://命名结束，且参数封装完毕
-                                object value = null;
-                                value = Changevalue(cache2);
-                                param_c.Add(cache, value);//生成键值对
+                                param_c.Add(cache, Changevalue(cache2));//生成键值对
                                 cache = "";//清空缓存
                                 cache2 = "";//清空缓存
                                 param = formParam.waitKname;
@@ -622,16 +681,14 @@ namespace StateMachine
                                 {
                                     //此时步骤的参数部分封装完毕
                                     step = formStep.paramok;
-                                    function_c.parameters = param_c;
-                                    param_c = null;//清空缓存
                                 }
                                 else if(step == formStep.to)//处于步骤出口函数参数部分
                                 {
                                     //此时函数参数封装完毕
                                     func = formFunc.paramok;
-                                    function_c.parameters = param_c;
-                                    param_c = null;//清空缓存
                                 }
+                                function_c.parameters = param_c;
+                                param_c = null;//清空缓存
                                 #endregion
                                 break;
                             default:
@@ -657,16 +714,14 @@ namespace StateMachine
                             {
                                 //此时步骤的参数部分封装完毕
                                 step = formStep.paramok;
-                                function_c.parameters = param_c;
-                                param_c = null;//清空缓存
                             }
                             else if (step == formStep.to)//处于步骤出口函数参数部分
                             {
                                 //此时函数参数封装完毕
                                 func = formFunc.paramok;
-                                function_c.parameters = param_c;
-                                param_c = null;//清空缓存
                             }
+                            function_c.parameters = param_c;
+                            param_c = null;//清空缓存
                             #endregion
                             break;
                         default:
@@ -838,10 +893,10 @@ namespace StateMachine
                             case '\t':
                             case '\n':
                                 break;
-                            case ')'://命名结束
+                            case ','://命名结束
                                 skip_c.condition = cache;//设置条件
                                 cache = "";//清空命名缓存
-                                to = formTo.function;
+                                to = formTo.waitIndex;
                                 break;
                             default:
                                 cache += c;
@@ -856,18 +911,117 @@ namespace StateMachine
                         case '\t':
                         case '\n':
                             break;
-                        case ')'://命名结束
-                            to = formTo.function;
+                        case ','://命名结束
+                            to = formTo.waitIndex;
                             break;
                         default:
                             Console.WriteLine("出口条件解析错误");
                             return false;
                     }
                     break;
+                case formTo.waitIndex://等待索引命名
+                    switch(c)
+                    {
+                        case '0':
+                        case '1':
+                        case '2':
+                        case '3':
+                        case '4':
+                        case '5':
+                        case '6':
+                        case '7':
+                        case '8':
+                        case '9':
+                            cache += c;
+                            to = formTo.Index;
+                            break;
+                        default:
+                            Console.WriteLine("出口索引解析出错");
+                            return false;
+                    }
+                    break;
+                case formTo.Index://索引命名
+                    switch (c)
+                    {
+                        case '0':
+                        case '1':
+                        case '2':
+                        case '3':
+                        case '4':
+                        case '5':
+                        case '6':
+                        case '7':
+                        case '8':
+                        case '9':
+                            cache += c;
+                            to = formTo.Index;
+                            break;
+                        case ')'://命名结束
+                            if(Regex.IsMatch(cache, @"^(0|[1-9][0-9]*)$"))
+                            {
+                                skip_c.index = Convert.ToInt32(cache);
+                                cache = "";
+                                to = formTo.waitFunction;
+                            }
+                            else
+                            {
+                                Console.WriteLine("出口索引解析出错");
+                                return false;
+                            }
+                            break;
+                        default:
+                            Console.WriteLine("出口索引解析出错");
+                            return false;
+                    }
+                    break;
+                case formTo.waitFunction://等待函数封装
+                    switch(c)
+                    {
+                        case ' ':
+                        case '\t':
+                        case '\n':break;
+                        case '{'://函数封装起始符
+                            to = formTo.functionok;
+                            break;
+                        case ';'://出口封装完毕
+                            step_c.skips.Add(skip_c);
+                            skip_c = null;
+                            step = formStep.took;
+                            break;
+                        default:
+                            Console.WriteLine("出口解析错误");
+                            return false;
+                    }
+                    break;
                 case formTo.function://生成函数信息，完成后并将函数信息封装进出口内
+                    if(!Parse_Func(c))//生成函数信息，完成后封装进出口
+                    {
+                        Console.WriteLine("出口函数解析错误");
+                        return false;
+                    }
                     break;
                 case formTo.functionok://一个完整函数封装完后
-
+                    switch(c)
+                    {
+                        case ' ':
+                        case '\t':
+                        case '\n':
+                            break;
+                        case '}'://出口封装结束
+                            step_c.skips.Add(skip_c);
+                            skip_c = null;
+                            step = formStep.took;
+                            break;
+                        default://还有未封装的函数
+                            func = formFunc.waitFname;
+                            to = formTo.function;
+                            if (!Parse_Func(c))//生成函数信息，完成后封装进出口
+                            {
+                                Console.WriteLine("出口函数解析错误");
+                                return false;
+                            }
+                            break;
+                    }
                     break;
             }
             return true;
@@ -875,6 +1029,119 @@ namespace StateMachine
 
         private bool Parse_Func(char c)
         {
+            switch(func)
+            {
+                case formFunc.waitFname://等待函数命名
+                    switch (c)
+                    {
+                        case ' '://空白字符跳过
+                        case '\t':
+                        case '\n':
+                            break;
+                        case '"'://转为引用模式
+                            inquote = true;
+                            func = formFunc.Fname;
+                            break;
+                        default:
+                            cache += c;
+                            func = formFunc.Fname;
+                            break;
+                    }
+                    break;
+                case formFunc.Fname://函数命名
+                    if (inquote)//引用模式
+                    {
+                        if (inchange)//转义模式
+                        {
+                            switch (c)
+                            {
+                                case '"':
+                                case '\\':
+                                    cache += c;
+                                    break;
+                                case 'n':
+                                    cache += '\n';
+                                    break;
+                                case 't':
+                                    cache += '\t';
+                                    break;
+                                default:
+                                    break;
+                            }
+                            inchange = false;
+                        }
+                        else//非转义模式
+                        {
+                            switch (c)
+                            {
+                                case '"'://结束命名
+                                    function_c = new FunctionInfo() { name = cache };//生成函数信息
+                                    cache = "";//清空命名缓存
+                                    func = formFunc.Fnameok;
+                                    break;
+                                case '\\':
+                                    inchange = true;
+                                    break;
+                                default:
+                                    cache += c;
+                                    break;
+                            }
+                        }
+                    }
+                    else//非引用模式
+                    {
+                        switch (c)
+                        {
+                            case ' ':
+                            case '\t':
+                            case '\n':
+                                break;
+                            case '('://命名结束
+                                function_c = new FunctionInfo() { name = cache };//生成函数信息
+                                cache = "";//清空命名缓存
+                                func = formFunc.param;
+                                break;
+                            default:
+                                cache += c;
+                                break;
+                        }
+                    }
+                    break;
+                case formFunc.Fnameok://函数命名完成
+                    switch (c)
+                    {
+                        case ' ':
+                        case '\t':
+                        case '\n': break;
+                        case '('://参数封装起始符
+                            func = formFunc.param;
+                            break;
+                        default:
+                            Console.WriteLine("函数名称解释错误");
+                            return false;
+                    }
+                    break;
+                case formFunc.param://参数封装
+                    if(!Parse_Param(c))
+                    {
+                        Console.WriteLine("函数参数解释错误");
+                        return false;
+                    }
+                    break;
+                case formFunc.paramok://参数封装完毕，
+                    switch(c)
+                    {
+                        case ' ':
+                        case '\t':
+                        case '\n':break;
+                        case ';'://此函数封装完毕
+                            skip_c.functions.Add(function_c);
+                            function_c = null;
+                            to = formTo.functionok;
+                            break;
+                    }
+                    break;
+            }
             return true;
         }
     }
