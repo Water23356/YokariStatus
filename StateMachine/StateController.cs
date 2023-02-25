@@ -71,7 +71,7 @@ namespace StateMachine
             int nextIndex = 0;//下一个状态的步骤索引
             if (statusInfo != null)
             {
-                StepInfo? next = statusInfo.Next();
+                StepInfo next = statusInfo.Next();
                 if (next != null)
                 {
                     StepInfo step = (StepInfo)next;

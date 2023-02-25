@@ -39,7 +39,7 @@ namespace StateMachine
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        public StepInfo? this[int index]
+        public StepInfo this[int index]
         {
             get 
             {
@@ -51,7 +51,7 @@ namespace StateMachine
         /// 获取当前步骤的信息，并将索引向后移动一位
         /// </summary>
         /// <returns></returns>
-        public StepInfo? Next()
+        public StepInfo Next()
         {
             if (Index > -1 && Index < steps.Count) { return steps[Index++]; }
             return null;
