@@ -11,7 +11,10 @@ namespace StateMachine
     {
         public static void Main(string[] args)
         {
-
+            ScriptParser parser = new ScriptParser();
+            StateMachine stateMachine = new StateMachine();
+            parser.LoadFormFile("D:\\UHp\\test.ykr", stateMachine);
+            stateMachine.LogAll();
         }
     }
 

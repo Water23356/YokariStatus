@@ -197,6 +197,7 @@ namespace StateMachine
                             case ' '://空白字符跳过
                             case '\t':
                             case '\n':
+                            case '\r':
                                 break;
                             case '"'://转为引用模式
                                 inquote = true;
@@ -255,6 +256,7 @@ namespace StateMachine
                                 case ' ':
                                 case '\t':
                                 case '\n':
+                                case '\r':
                                     break;
                                 case '{'://命名结束
                                     cell_c = new StatusCell(cache);
@@ -273,6 +275,7 @@ namespace StateMachine
                         {
                             case ' ':
                             case '\t':
+                            case '\r':
                             case '\n': break;
                             case '{':
                                 cell = formCell.stepok;
@@ -295,6 +298,7 @@ namespace StateMachine
                         {
                             case ' ':
                             case '\t':
+                            case '\r':
                             case '\n': break;
                             case '}'://单元完整编辑结构（将单元封装进库内）
                                 sm.Add(cell_c);
@@ -327,6 +331,7 @@ namespace StateMachine
                         case ' '://空白字符跳过
                         case '\t':
                         case '\n':
+                        case '\r':
                             break;
                         case '"'://转为引用模式
                             inquote = true;
@@ -406,6 +411,7 @@ namespace StateMachine
                     {
                         case ' ':
                         case '\t':
+                        case '\r':
                         case '\n': break;
                         case '(':
                             step = formStep.param;
@@ -418,7 +424,7 @@ namespace StateMachine
                     }
                     break;
                 case formStep.param://参数
-                    if (!Parse_Param(c))//解析出错则抛出错误信息并终止（生成参数信息，完成后将参数信息封装进函数内）
+                    if (!Parse_Param(c))//解析出错则抛出错误信息并终止（生成参数信息，完成后将参数信息封装进函数内,将函数封装进步骤内）
                     {
                         Console.WriteLine("参数解析异常");
                         return false;
@@ -429,12 +435,14 @@ namespace StateMachine
                     {
                         case ' ':
                         case '\t':
+                        case '\r':
                         case '\n':break;
                         case '{'://出口开始标记
                             step = formStep.to;
                             break;
-                        case ';'://出口结束标记
-                            step = formStep.waitSname;
+                        case ';'://出口结束标记(步骤封装完毕)
+                            cell_c.AddStep(step_c);
+                            cell = formCell.stepok;
                             break;
                         default:
                             Console.WriteLine("步骤解析异常");
@@ -446,6 +454,7 @@ namespace StateMachine
                     {
                         case ' ':
                         case '\t':
+                        case '\r':
                         case '\n':break;
                         case '{'://开启出口封装
                             step = formStep.took;
@@ -468,6 +477,7 @@ namespace StateMachine
                     {
                         case ' ':
                         case '\t':
+                        case '\r':
                         case '\n': break;
                         case '}'://步骤的完整结构（步骤解析完毕，将步骤封装进单元内）
                             cell_c.AddStep(step_c);
@@ -498,6 +508,7 @@ namespace StateMachine
                         case ' '://空白字符跳过
                         case '\t':
                         case '\n':
+                        case '\r':
                             break;
                         case ')':
                             #region 跳转状态
@@ -506,16 +517,16 @@ namespace StateMachine
                             {
                                 //此时步骤的参数部分封装完毕
                                 step = formStep.paramok;
-                                function_c.parameters = param_c;
-                                param_c = null;//清空缓存
+                                //此时函数部分封装完毕
+                                step_c.function = function_c;
                             }
                             else if (step == formStep.to)//处于步骤出口函数参数部分
                             {
                                 //此时函数参数封装完毕
                                 func = formFunc.paramok;
-                                function_c.parameters = param_c;
-                                param_c = null;//清空缓存
                             }
+                            function_c.parameters = param_c;
+                            param_c = null;//清空缓存
                             #endregion
                             break;
                         case '"'://转为引用模式
@@ -555,7 +566,6 @@ namespace StateMachine
                             switch (c)
                             {
                                 case '"'://结束命名
-                                    param_c.Add(cache, null);//生成键
                                     //暂时不清除缓存，因为匹配键值对时要用
                                     param= formParam.Knameok;
                                     break;
@@ -575,9 +585,9 @@ namespace StateMachine
                             case ' ':
                             case '\t':
                             case '\n':
+                            case '\r':
                                 break;
                             case ':'://命名结束
-                                param_c.Add(cache, null);//生成键
                                 //暂时不清除缓存，因为匹配键值对时要用
                                 param = formParam.waitVname;
                                 break;
@@ -604,6 +614,7 @@ namespace StateMachine
                         case ' '://空白字符跳过
                         case '\t':
                         case '\n':
+                        case '\r':
                             break;
                         case '"'://转为引用模式
                             inquote = true;
@@ -662,6 +673,7 @@ namespace StateMachine
                         {
                             case ' ':
                             case '\t':
+                            case '\r':
                             case '\n':
                                 break;
                             case ','://命名结束并且继续
@@ -681,6 +693,8 @@ namespace StateMachine
                                 {
                                     //此时步骤的参数部分封装完毕
                                     step = formStep.paramok;
+                                    //此时函数部分封装完毕
+                                    step_c.function = function_c;
                                 }
                                 else if(step == formStep.to)//处于步骤出口函数参数部分
                                 {
@@ -702,6 +716,7 @@ namespace StateMachine
                     {
                         case ' '://空白字符跳过
                         case '\t':
+                        case '\r':
                         case '\n':
                             break;
                         case ','://获取键值对继续
@@ -714,6 +729,8 @@ namespace StateMachine
                             {
                                 //此时步骤的参数部分封装完毕
                                 step = formStep.paramok;
+                                //此时函数部分封装完毕
+                                step_c.function = function_c;
                             }
                             else if (step == formStep.to)//处于步骤出口函数参数部分
                             {
@@ -743,6 +760,7 @@ namespace StateMachine
                         case ' '://空白字符跳过
                         case '\t':
                         case '\n':
+                        case '\r':
                             break;
                         case '"'://转为引用模式
                             inquote = true;
@@ -800,6 +818,7 @@ namespace StateMachine
                         {
                             case ' ':
                             case '\t':
+                            case '\r':
                             case '\n':
                                 break;
                             case '('://命名结束
@@ -819,6 +838,7 @@ namespace StateMachine
                         case ' ':
                         case '\t':
                         case '\n':
+                        case '\r':
                             break;
                         case '('://命名结束
                             to = formTo.waitIname;
@@ -834,6 +854,7 @@ namespace StateMachine
                         case ' '://空白字符跳过
                         case '\t':
                         case '\n':
+                        case '\r':
                             break;
                         case '"'://转为引用模式
                             inquote = true;
@@ -892,6 +913,7 @@ namespace StateMachine
                             case ' ':
                             case '\t':
                             case '\n':
+                            case '\r':
                                 break;
                             case ','://命名结束
                                 skip_c.condition = cache;//设置条件
@@ -910,6 +932,7 @@ namespace StateMachine
                         case ' ':
                         case '\t':
                         case '\n':
+                        case '\r':
                             break;
                         case ','://命名结束
                             to = formTo.waitIndex;
@@ -922,6 +945,11 @@ namespace StateMachine
                 case formTo.waitIndex://等待索引命名
                     switch(c)
                     {
+                        case ' ':
+                        case '\t':
+                        case '\n':
+                        case '\r':
+                            break;
                         case '0':
                         case '1':
                         case '2':
@@ -943,6 +971,11 @@ namespace StateMachine
                 case formTo.Index://索引命名
                     switch (c)
                     {
+                        case ' ':
+                        case '\t':
+                        case '\n':
+                        case '\r':
+                            break;
                         case '0':
                         case '1':
                         case '2':
@@ -979,6 +1012,7 @@ namespace StateMachine
                     {
                         case ' ':
                         case '\t':
+                        case '\r':
                         case '\n':break;
                         case '{'://函数封装起始符
                             to = formTo.functionok;
@@ -1006,6 +1040,7 @@ namespace StateMachine
                         case ' ':
                         case '\t':
                         case '\n':
+                        case '\r':
                             break;
                         case '}'://出口封装结束
                             step_c.skips.Add(skip_c);
@@ -1037,6 +1072,7 @@ namespace StateMachine
                         case ' '://空白字符跳过
                         case '\t':
                         case '\n':
+                        case '\r':
                             break;
                         case '"'://转为引用模式
                             inquote = true;
@@ -1095,6 +1131,7 @@ namespace StateMachine
                             case ' ':
                             case '\t':
                             case '\n':
+                            case '\r':
                                 break;
                             case '('://命名结束
                                 function_c = new FunctionInfo() { name = cache };//生成函数信息
@@ -1112,6 +1149,7 @@ namespace StateMachine
                     {
                         case ' ':
                         case '\t':
+                        case '\r':
                         case '\n': break;
                         case '('://参数封装起始符
                             func = formFunc.param;
@@ -1133,12 +1171,16 @@ namespace StateMachine
                     {
                         case ' ':
                         case '\t':
+                        case '\r':
                         case '\n':break;
                         case ';'://此函数封装完毕
                             skip_c.functions.Add(function_c);
                             function_c = null;
                             to = formTo.functionok;
                             break;
+                        default:
+                            Console.WriteLine("函数封装错误");
+                            return false;
                     }
                     break;
             }
