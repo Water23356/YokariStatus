@@ -9,7 +9,7 @@ namespace StateMachine
     /// <summary>
     /// 步骤信息
     /// </summary>
-    public struct StepInfo
+    public class StepInfo
     {
         #region 属性
         /// <summary>

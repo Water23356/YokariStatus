@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace StateMachine
@@ -70,7 +71,7 @@ namespace StateMachine
     /// </summary>
     public class ScriptParser
     {
-        private enum formCell { waitCname,Cname,Cnameok,step}
+        private enum formCell { waitCname,Cname,Cnameok,step,stepok}
         private enum formStep { waitSname,Sname,Snameok,param,paramok,to,took,go}
         private enum formParam { waitKname,Kname,Knameok,waitVname,Vname,Vnameok}
         private enum formTo { waitTname,Tname,Tnameok,waitIname,Iname,Inameok,function,functionok}
@@ -87,15 +88,40 @@ namespace StateMachine
 
         #region 缓存器
         private string cache;//命名缓存
+        private string cache2;//命名缓存
         private StatusCell cell_c;
         private StepInfo step_c;
+        private Dictionary<string, object> param_c;
         private SkipInfo skip_c;
         private FunctionInfo function_c;
+        private StateMachine sm;
         #endregion
 
 
         private bool inchange;//转义编辑
         private bool inquote;//引用编辑
+
+        /// <summary>
+        /// 将特定文本转化为对应的类型值
+        /// </summary>
+        /// <param name="txt"></param>
+        /// <returns></returns>
+        private object Changevalue(string txt)
+        {
+            if (Regex.IsMatch(cache2, @"^(0|-?[1-9][0-9]*)$"))//判断是否为整形
+            {
+                value = Convert.ToInt32(cache2);
+            }
+            else if (Regex.IsMatch(cache2, @"^(-?(0|[1-9][0-9]*))(\.\d+)?$"))//判断是否为实形
+            {
+                value = Convert.ToDouble(cache2);
+            }
+            else if ()//判断是否为布尔类型
+            {
+
+            }
+        }
+
         /**
          * 引号的作用是，表示一个整体
          * 在引号编辑内是，转义才起作用
@@ -106,8 +132,9 @@ namespace StateMachine
         /// <param name="fileName">脚本文件路径（包含后缀.ykr）</param>
         /// <param name="sm">实现指令的状态机对象</param>
         /// <return>若无法成功解析，或者解析出错，则终止返回false，正常解析完毕返回true</return>
-        public bool LoadFormFile(string fileName, StateMachine sm)
+        public bool LoadFormFile(string fileName, StateMachine sm_)
         {
+            sm = sm_;
             if (!File.Exists(fileName)) { return false; }
             StreamReader reader = new StreamReader(fileName);
 
@@ -220,6 +247,9 @@ namespace StateMachine
                     case formCell.Cnameok://引用命名完毕
                         switch(c)
                         {
+                            case ' ':
+                            case '\t':
+                            case '\n': break;
                             case '{':
                                 cell = formCell.step;
                                 step = formStep.waitSname;
@@ -230,10 +260,30 @@ namespace StateMachine
                         }
                         break;
                     case formCell.step://步骤编辑
-                        if(!Parse_Step(c))//解析出错则抛出错误信息并终止
+                        if(!Parse_Step(c))//解析出错则抛出错误信息并终止（生成步骤信息，完成后将步骤信息封装进单元内）
                         {
                             Console.WriteLine("步骤解析异常");
                             return false;
+                        }
+                        break;
+                    case formCell.stepok://步骤编辑完毕
+                        switch(c)
+                        {
+                            case ' ':
+                            case '\t':
+                            case '\n': break;
+                            case '}'://单元完整编辑结构（将单元封装进库内）
+                                sm.Add(cell_c);
+                                cell_c = null;
+                                break;
+                            default://说明还有未添加的步骤
+                                cell = formCell.step;
+                                if (!Parse_Step(c))//解析出错则抛出错误信息并终止（生成步骤信息，完成后将步骤信息封装进单元内）
+                                {
+                                    Console.WriteLine("步骤解析异常");
+                                    return false;
+                                }
+                                break;
                         }
                         break;
                 }
@@ -290,8 +340,8 @@ namespace StateMachine
                             switch (c)
                             {
                                 case '"'://结束命名
-                                    step_c = new StepInfo();
-                                    function_c = new FunctionInfo() { name = cache};
+                                    step_c = new StepInfo();//生成步骤缓存
+                                    function_c = new FunctionInfo() { name = cache};//生成步骤中的函数缓存
                                     cache = "";//清空缓存
                                     step = formStep.Snameok;
                                     break;
@@ -313,10 +363,12 @@ namespace StateMachine
                             case '\n':
                                 break;
                             case '('://命名结束
-                                step_c = new StepInfo();
-                                function_c = new FunctionInfo() { name = cache };
+                                step_c = new StepInfo();//生成步骤缓存
+                                function_c = new FunctionInfo() { name = cache };//生成步骤中的函数缓存
                                 cache = "";//清空缓存
                                 step = formStep.param;
+                                param = formParam.waitKname;
+                                param_c = new Dictionary<string, object>();//生成参数缓存
                                 break;
                             default:
                                 cache += c;
@@ -327,8 +379,13 @@ namespace StateMachine
                 case formStep.Snameok://引用命名完毕
                     switch (c)
                     {
+                        case ' ':
+                        case '\t':
+                        case '\n': break;
                         case '(':
                             step = formStep.param;
+                            param = formParam.waitKname;
+                            param_c = new Dictionary<string, object>();//生成参数缓存
                             break;
                         default:
                             Console.WriteLine("步骤解析异常");
@@ -336,7 +393,7 @@ namespace StateMachine
                     }
                     break;
                 case formStep.param://参数
-                    if (!Parse_Param(c))//解析出错则抛出错误信息并终止
+                    if (!Parse_Param(c))//解析出错则抛出错误信息并终止（生成参数信息，完成后将参数信息封装进函数内）
                     {
                         Console.WriteLine("参数解析异常");
                         return false;
@@ -345,10 +402,13 @@ namespace StateMachine
                 case formStep.paramok://参数处理完毕
                     switch(c)
                     {
-                        case '{':
+                        case ' ':
+                        case '\t':
+                        case '\n':break;
+                        case '{'://出口开始标记
                             step = formStep.to;
                             break;
-                        case ';':
+                        case ';'://出口结束标记
                             step = formStep.waitSname;
                             break;
                         default:
@@ -357,7 +417,7 @@ namespace StateMachine
                     }
                     break;
                 case formStep.to://出口
-                    if(!Parse_To(c))//解析出错则抛出错误信息并终止
+                    if(!Parse_To(c))//解析出错则抛出错误信息并终止(生成出口信息，完成后并将出口信息封装进步骤内)
                     {
                         Console.WriteLine("出口解析异常");
                         return false;
@@ -366,36 +426,18 @@ namespace StateMachine
                 case formStep.took://出口处理完毕(整个步骤解析完毕)
                     switch(c)
                     {
-                        case '}'://步骤的完整结构
+                        case ' ':
+                        case '\t':
+                        case '\n': break;
+                        case '}'://步骤的完整结构（步骤解析完毕，将步骤封装进单元内）
                             cell_c.AddStep(step_c);
-                            step = formStep.go;
+                            cell = formCell.stepok;
                             break;
-                        default:
-                            Console.WriteLine("步骤解析异常");
-                            break;
-                    }
-                    break;
-                case formStep.go:
-                    switch(c)
-                    {
-                        case '}'://单元编辑结束
-                            cell = formCell.waitCname;
-                            break;
-                        default://单元编辑未结束，作为等待步骤名处理
-                            switch (c)
+                        default://说明还有出口未封装
+                            if (!Parse_To(c))//解析出错则抛出错误信息并终止(生成出口信息，完成后并将出口信息封装进步骤内)
                             {
-                                case ' '://空白字符跳过
-                                case '\t':
-                                case '\n':
-                                    break;
-                                case '"'://转为引用模式
-                                    inquote = true;
-                                    step = formStep.Sname;
-                                    break;
-                                default:
-                                    cache += c;
-                                    step = formStep.Sname;
-                                    break;
+                                Console.WriteLine("出口解析异常");
+                                return false;
                             }
                             break;
                     }
@@ -406,11 +448,428 @@ namespace StateMachine
 
         private bool Parse_Param(char c)
         {
+            switch(param)
+            {
+                case formParam.waitKname://等待键命名
+                    switch (c)
+                    {
+                        case ' '://空白字符跳过
+                        case '\t':
+                        case '\n':
+                            break;
+                        case '"'://转为引用模式
+                            inquote = true;
+                            param = formParam.Kname;
+                            break;
+                        default:
+                            cache += c;
+                            param = formParam.Kname;
+                            break;
+                    }
+                    break;
+                case formParam.Kname://键命名
+                    if (inquote)//引用模式
+                    {
+                        if (inchange)//转义模式
+                        {
+                            switch (c)
+                            {
+                                case '"':
+                                case '\\':
+                                    cache += c;
+                                    break;
+                                case 'n':
+                                    cache += '\n';
+                                    break;
+                                case 't':
+                                    cache += '\t';
+                                    break;
+                                default:
+                                    break;
+                            }
+                            inchange = false;
+                        }
+                        else//非转义模式
+                        {
+                            switch (c)
+                            {
+                                case '"'://结束命名
+                                    param_c.Add(cache, null);//生成键
+                                    //暂时不清除缓存，因为匹配键值对时要用
+                                    param= formParam.Knameok;
+                                    break;
+                                case '\\':
+                                    inchange = true;
+                                    break;
+                                default:
+                                    cache += c;
+                                    break;
+                            }
+                        }
+                    }
+                    else//非引用模式
+                    {
+                        switch (c)
+                        {
+                            case ' ':
+                            case '\t':
+                            case '\n':
+                                break;
+                            case ':'://命名结束
+                                param_c.Add(cache, null);//生成键
+                                //暂时不清除缓存，因为匹配键值对时要用
+                                param = formParam.waitVname;
+                                break;
+                            default:
+                                cache += c;
+                                break;
+                        }
+                    }
+                    break;
+                case formParam.Knameok://键完成命名
+                    switch (c)
+                    {
+                        case ':':
+                            param = formParam.waitVname;
+                            break;
+                        default:
+                            Console.WriteLine("键名解析异常");
+                            return false;
+                    }
+                    break;
+                case formParam.waitVname://等待值命名
+                    switch (c)
+                    {
+                        case ' '://空白字符跳过
+                        case '\t':
+                        case '\n':
+                            break;
+                        case '"'://转为引用模式
+                            inquote = true;
+                            param = formParam.Vname;
+                            break;
+                        default:
+                            cache2 += c;
+                            param = formParam.Vname;
+                            break;
+                    }
+                    break;
+                case formParam.Vname://值命名使用cache2
+                    if (inquote)//引用模式
+                    {
+                        if (inchange)//转义模式
+                        {
+                            switch (c)
+                            {
+                                case '"':
+                                case '\\':
+                                    cache2 += c;
+                                    break;
+                                case 'n':
+                                    cache2 += '\n';
+                                    break;
+                                case 't':
+                                    cache2 += '\t';
+                                    break;
+                                default:
+                                    break;
+                            }
+                            inchange = false;
+                        }
+                        else//非转义模式
+                        {
+                            switch (c)
+                            {
+                                case '"'://结束命名
+                                    param_c.Add(cache, cache2);//生成键值对
+                                    cache = "";//清空缓存
+                                    cache2 = "";//清空缓存
+                                    param = formParam.Vnameok;
+                                    break;
+                                case '\\':
+                                    inchange = true;
+                                    break;
+                                default:
+                                    cache2 += c;
+                                    break;
+                            }
+                        }
+                    }
+                    else//非引用模式
+                    {
+                        switch (c)
+                        {
+                            case ' ':
+                            case '\t':
+                            case '\n':
+                                break;
+                            case ','://命名结束并且继续
+                                param_c.Add(cache, cache2);//生成键值对
+                                cache = "";//清空缓存
+                                cache2 = "";//清空缓存
+                                param = formParam.waitKname;
+                                break;
+                            case ')'://命名结束，且参数封装完毕
+                                object value = null;
+                                value = Changevalue(cache2);
+                                param_c.Add(cache, value);//生成键值对
+                                cache = "";//清空缓存
+                                cache2 = "";//清空缓存
+                                param = formParam.waitKname;
+                                #region 跳转状态
+                                //判断当前处于哪个状态
+                                if (step == formStep.param)//处于步骤头参数部分
+                                {
+                                    //此时步骤的参数部分封装完毕
+                                    step = formStep.paramok;
+                                    function_c.parameters = param_c;
+                                    param_c = null;//清空缓存
+                                }
+                                else if(step == formStep.to)//处于步骤出口函数参数部分
+                                {
+                                    //此时函数参数封装完毕
+                                    func = formFunc.paramok;
+                                    function_c.parameters = param_c;
+                                    param_c = null;//清空缓存
+                                }
+                                #endregion
+                                break;
+                            default:
+                                cache2 += c;
+                                break;
+                        }
+                    }
+                    break;
+                case formParam.Vnameok://值完成命名
+                    switch (c)
+                    {
+                        case ' '://空白字符跳过
+                        case '\t':
+                        case '\n':
+                            break;
+                        case ','://获取键值对继续
+                            param = formParam.waitKname;
+                            break;
+                        case ')':
+                            #region 跳转状态
+                            //判断当前处于哪个状态
+                            if (step == formStep.param)//处于步骤头参数部分
+                            {
+                                //此时步骤的参数部分封装完毕
+                                step = formStep.paramok;
+                                function_c.parameters = param_c;
+                                param_c = null;//清空缓存
+                            }
+                            else if (step == formStep.to)//处于步骤出口函数参数部分
+                            {
+                                //此时函数参数封装完毕
+                                func = formFunc.paramok;
+                                function_c.parameters = param_c;
+                                param_c = null;//清空缓存
+                            }
+                            #endregion
+                            break;
+                        default:
+                            Console.WriteLine("键值对解析异常");
+                            break;
+                    }
+                    break;
+            }
             return true;
         }
 
         private bool Parse_To(char c)
         {
+            switch(to)
+            {
+                case formTo.waitTname://等待出口命名
+                    switch (c)
+                    {
+                        case ' '://空白字符跳过
+                        case '\t':
+                        case '\n':
+                            break;
+                        case '"'://转为引用模式
+                            inquote = true;
+                            to = formTo.Tname;
+                            break;
+                        default:
+                            cache += c;
+                            to = formTo.Tname;
+                            break;
+                    }
+                    break;
+                case formTo.Tname://出口命名
+                    if (inquote)//引用模式
+                    {
+                        if (inchange)//转义模式
+                        {
+                            switch (c)
+                            {
+                                case '"':
+                                case '\\':
+                                    cache += c;
+                                    break;
+                                case 'n':
+                                    cache += '\n';
+                                    break;
+                                case 't':
+                                    cache += '\t';
+                                    break;
+                                default:
+                                    break;
+                            }
+                            inchange = false;
+                        }
+                        else//非转义模式
+                        {
+                            switch (c)
+                            {
+                                case '"'://结束命名
+                                    skip_c = new SkipInfo() { name = cache };//生成出口对象
+                                    cache = "";//清空命名缓存
+                                    to = formTo.Tnameok;
+                                    break;
+                                case '\\':
+                                    inchange = true;
+                                    break;
+                                default:
+                                    cache += c;
+                                    break;
+                            }
+                        }
+                    }
+                    else//非引用模式
+                    {
+                        switch (c)
+                        {
+                            case ' ':
+                            case '\t':
+                            case '\n':
+                                break;
+                            case '('://命名结束
+                                skip_c = new SkipInfo() { name = cache };//生成出口对象
+                                cache = "";//清空命名缓存
+                                to = formTo.waitIname;
+                                break;
+                            default:
+                                cache += c;
+                                break;
+                        }
+                    }
+                    break;
+                case formTo.Tnameok://出口完成命名
+                    switch(c)
+                    {
+                        case ' ':
+                        case '\t':
+                        case '\n':
+                            break;
+                        case '('://命名结束
+                            to = formTo.waitIname;
+                            break;
+                        default:
+                            Console.WriteLine("出口名称解析错误");
+                            return false;
+                    }
+                    break;
+                case formTo.waitIname://等待条件命名
+                    switch (c)
+                    {
+                        case ' '://空白字符跳过
+                        case '\t':
+                        case '\n':
+                            break;
+                        case '"'://转为引用模式
+                            inquote = true;
+                            to = formTo.Iname;
+                            break;
+                        default:
+                            cache += c;
+                            to = formTo.Iname;
+                            break;
+                    }
+                    break;
+                case formTo.Iname://条件命名
+                    if (inquote)//引用模式
+                    {
+                        if (inchange)//转义模式
+                        {
+                            switch (c)
+                            {
+                                case '"':
+                                case '\\':
+                                    cache += c;
+                                    break;
+                                case 'n':
+                                    cache += '\n';
+                                    break;
+                                case 't':
+                                    cache += '\t';
+                                    break;
+                                default:
+                                    break;
+                            }
+                            inchange = false;
+                        }
+                        else//非转义模式
+                        {
+                            switch (c)
+                            {
+                                case '"'://结束命名
+                                    skip_c.condition = cache;//设置条件
+                                    cache = "";//清空命名缓存
+                                    to = formTo.Inameok;
+                                    break;
+                                case '\\':
+                                    inchange = true;
+                                    break;
+                                default:
+                                    cache += c;
+                                    break;
+                            }
+                        }
+                    }
+                    else//非引用模式
+                    {
+                        switch (c)
+                        {
+                            case ' ':
+                            case '\t':
+                            case '\n':
+                                break;
+                            case ')'://命名结束
+                                skip_c.condition = cache;//设置条件
+                                cache = "";//清空命名缓存
+                                to = formTo.function;
+                                break;
+                            default:
+                                cache += c;
+                                break;
+                        }
+                    }
+                    break;
+                case formTo.Inameok://条件命名完毕
+                    switch (c)
+                    {
+                        case ' ':
+                        case '\t':
+                        case '\n':
+                            break;
+                        case ')'://命名结束
+                            to = formTo.function;
+                            break;
+                        default:
+                            Console.WriteLine("出口条件解析错误");
+                            return false;
+                    }
+                    break;
+                case formTo.function://生成函数信息，完成后并将函数信息封装进出口内
+                    break;
+                case formTo.functionok://一个完整函数封装完后
+
+                    break;
+            }
             return true;
         }
 

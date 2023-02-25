@@ -9,7 +9,7 @@ namespace StateMachine
     /// <summary>
     /// 跳转信息
     /// </summary>
-    public struct SkipInfo
+    public class SkipInfo
     {
         #region 属性
         /// <summary>

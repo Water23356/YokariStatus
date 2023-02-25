@@ -9,7 +9,7 @@ namespace StateMachine
     /// <summary>
     /// 函数信息
     /// </summary>
-    public struct FunctionInfo
+    public class FunctionInfo
     {
         #region 属性
         /// <summary>
