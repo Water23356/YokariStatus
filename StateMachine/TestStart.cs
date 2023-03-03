@@ -15,7 +15,7 @@ namespace StateMachine
             StateMachine stateMachine = new StateMachine();
             parser.LoadFormFile("D:\\UHp\\test.ykr", stateMachine);
             stateMachine.LogAll();
-
+            Console.Write("\n\n\n\n\n");
             StateController controller = new StateController(stateMachine,new Effector());
             controller.Start();
 

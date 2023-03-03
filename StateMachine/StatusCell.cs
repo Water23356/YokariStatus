@@ -74,7 +74,7 @@ namespace StateMachine
             int i = 0;
             while(i<steps.Count)
             {
-                steps[i].PrintInfo("\t");
+                steps[i].PrintInfo("  ");
                 ++i;
             }
             Console.WriteLine("}");

@@ -35,7 +35,7 @@ namespace StateMachine
             Console.WriteLine(tabto + $"【出口】:{name}:{condition}"+"{");
             foreach(FunctionInfo f in functions)
             {
-                f.PrintInfo(tabto+"\t");
+                f.PrintInfo(tabto+"  ");
             }
             Console.WriteLine(tabto+"}");
         }

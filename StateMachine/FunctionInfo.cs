@@ -27,7 +27,7 @@ namespace StateMachine
             Console.WriteLine(tabto+$"【函数】:{name}"+"{");
             foreach(string k in parameters.Keys)
             {
-                Console.WriteLine(tabto+$"\t{k} : {parameters[k] },");
+                Console.WriteLine(tabto+$"  {k} : {parameters[k] },");
             }
             Console.WriteLine(tabto+"}");
         }

@@ -25,10 +25,10 @@ namespace StateMachine
         public void PrintInfo(string tabto)
         {
             Console.WriteLine(tabto+"【步骤】{");
-            function.PrintInfo(tabto+"\t");
+            function.PrintInfo(tabto+"  ");
             foreach(SkipInfo s in skips)
             {
-                s.PrintInfo(tabto + "\t");
+                s.PrintInfo(tabto + "  ");
             }
             Console.WriteLine(tabto+"}");
         }
