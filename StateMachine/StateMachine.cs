@@ -250,6 +250,7 @@ namespace StateMachine
                 length = reader.Read(buffer);
             }
             //所有文本解析完毕后
+            reader.Close();
             if (cell != formCell.waitCname)//存在编辑器状态则说明解析异常
             {
                 Console.WriteLine("终止解析异常");
