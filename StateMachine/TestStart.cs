@@ -24,34 +24,42 @@ namespace StateMachine
 
     class Effector : IEffector
     {
-        public string Effect(string name, Dictionary<string, object> parameters)
+        public Action<string> BackValue { get; set; }
+
+        public void Effect(string name, Dictionary<string, object> parameters)
         {
             switch(name)
             {
                 case "场景标题":
                     Console.WriteLine("当前场景:" + parameters["标题"]);
                     Console.ReadKey();
-                    return null;
+                    BackValue(null);
+                    return;
                 case "对话":
                     Console.WriteLine($"【{parameters["名称"]}】：{parameters["内容"]}");
                     Console.ReadKey();
-                    return null;
+                    BackValue(null);
+                    return;
                 case "选择":
                     Console.WriteLine($"【选项1】：{parameters["选项1"]}");
                     Console.WriteLine($"【选项2】：{parameters["选项2"]}");
-                    return Console.ReadLine();
+                    BackValue(Console.ReadLine());
+                    return;
                 case "声音":
                     Console.WriteLine($"*播放音效：【{parameters["音效"]}】");
                     Console.ReadKey();
-                    return null;
+                    BackValue(null);
+                    return;
                 case "结局":
                     Console.WriteLine($"【结局】：{parameters["标题"]}");
                     Console.ReadKey();
-                    return null;
+                    BackValue(null);
+                    return;
                 default:
                     Console.WriteLine("此函数不存在："+name );
                     Console.ReadKey();
-                    return null;
+                    BackValue(null);
+                    return;
             }
         }
     }
