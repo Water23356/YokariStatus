@@ -66,10 +66,7 @@ namespace StateMachine
 
         private void Go()
         {
-            while (active)//不用递归，防止深层递归导致爆栈
-            {
-                active = Run();
-            }
+            while (active && Run());//不用递归，防止深层递归导致爆栈
         }
 
         /// <summary>
