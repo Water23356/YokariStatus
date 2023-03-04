@@ -101,6 +101,14 @@ namespace StateMachine
 
         private enum formCmd { non, waitName, Name, _Name, Nameok, param, paramok }
 
+        #region 构造函数
+        public ScriptParser() { param_cmd = new Dictionary<string, Dictionary<string, object>>(); }
+        public ScriptParser(ScriptParser sp)
+        {
+            param_cmd = sp.param_cmd;
+        }
+        #endregion
+
 
         #region 状态器
         private formCell cell = formCell.waitCname;
@@ -114,7 +122,7 @@ namespace StateMachine
         #region 缓存器
         private int charcount = 0;//计数器
         private int rowcount = 1;//行计数器
-        private Dictionary<string, Dictionary<string, object>> param_cmd = new Dictionary<string, Dictionary<string, object>>();//参数缓存器
+        private Dictionary<string, Dictionary<string, object>> param_cmd;
         private Dictionary<string, object> param_cmd_c;//参数临时缓存器
         private string cache_cmd;//指令缓存
         private string cache;//命名缓存
@@ -183,21 +191,8 @@ namespace StateMachine
                 if (u == path) { return; }
             }
             sm.pathInfo.Add(path);
-            ScriptParser sp = new ScriptParser();
+            ScriptParser sp = new ScriptParser(this);
             sp.LoadFormFile(path, sm);
-            Dictionary<string, Dictionary<string, object>> cc = sp.GetCmdParamCache();
-            foreach(string k in cc.Keys)
-            {
-                if (inKey(k, param_cmd)) 
-                {
-                    param_cmd[k] = cc[k];
-                }
-                else
-                {
-                    param_cmd.Add(k, cc[k]);
-                }
-            }
-
     }
         private void cmd_pack(Dictionary<string, object> p)//封装参数包
         {
@@ -224,11 +219,6 @@ namespace StateMachine
             Console.Write($"错误：第{rowcount}行,第{charcount}个字符:\t{c}");
         }
         #endregion
-
-        public Dictionary<string, Dictionary<string, object>> GetCmdParamCache()
-        {
-            return param_cmd;
-        }
 
         /**
          * 引号的作用是，表示一个整体
