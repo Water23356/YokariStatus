@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -100,7 +101,6 @@ namespace StateMachine
                             Run_Step();
                             break;
                         case status.skip:
-                            skipIndex = 0;
                             Run_Skip_Pre();
                             break;
                         case status.function:
@@ -114,10 +114,12 @@ namespace StateMachine
         public void BackValue(string key)//回调函数：获取事件返回值
         {
             backvalue = key + "";
+            Console.WriteLine(key+"");
             switch (stm)
             {
                 case status.step://处于步骤函数运行后的断口
                     stm = status.skip;
+                    skipIndex = 0;
                     wait = false;
                     break;
                 case status.function://处于出口伴随函数的断口
@@ -172,8 +174,9 @@ namespace StateMachine
             }
             else//循环遍历出口
             {
+                //Console.WriteLine($"当前数量：{nowStep.skips.Count}  当前索引：{skipIndex}");
                 nowSkip = nowStep.skips[skipIndex];//获取出口
-                //Console.WriteLine($"【debug】返回值：{backvalue}\t当前索引：{skipIndex}\t名称：{nowSkip.name}");
+                //Console.WriteLine($"【debug】返回值：{backvalue}\t当前条件：{nowSkip.condition}\t当前索引：{skipIndex}\t名称：{nowSkip.name}");
                 if (backvalue == "" || nowSkip.condition == backvalue)//满足出口条件
                 {
                     exit = true;
@@ -182,7 +185,7 @@ namespace StateMachine
                     nextIndex = nowSkip.index;
                     stm = status.function;//开始对伴随函数进行循环
                 }
-                ++skipIndex;
+                skipIndex++;
             }
         }
         public void Run_Skip_Function()
